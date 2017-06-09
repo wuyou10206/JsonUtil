@@ -155,7 +155,7 @@ public class JsonEqualsUtils {
     }
     public static void main(String[] args) throws JSONException {
         JSONArray j1 = new JSONArray("[[1,2,3],[4,3],[6]]");
-        JSONArray j2 = new JSONArray("[[1,2,3],[4],[5]]");
+        JSONArray j2 = new JSONArray("[[1,2,3],[3,4],[6]]");
         init();
         equals(j1,j2);
         System.out.println(getJsonEqualsResult());
