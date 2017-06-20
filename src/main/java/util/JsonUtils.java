@@ -15,9 +15,9 @@ import java.util.List;
 /**
  * Created by zhaowei on 2017/6/5.
  */
-public class JsonEqualsUtils {
+public class JsonUtils {
     private static String equalsStr = "";
-    private static final Logger logger = LoggerFactory.getLogger(JsonEqualsUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(JsonUtils.class);
 
     static {
         PropertyConfigurator.configure("log4j.properties");
@@ -41,7 +41,7 @@ public class JsonEqualsUtils {
             String str2 = list2.get(i);
             if(str1.startsWith("[")){
                 if(str2.startsWith("[")){
-                    equals(array1.getJSONArray(i),array2.getJSONArray(i));
+                    equals(new JSONArray(str1),new JSONArray(str2));
                 }else{
                     equalsStr+=false;
                     logger.info("[false,第{}个元素,str1={},str2={}]",i,str1,str2);
@@ -49,7 +49,7 @@ public class JsonEqualsUtils {
                 }
             }else if(str1.startsWith("{")){
                 if(str2.startsWith("{")){
-                    equals(array1.getJSONObject(i),array2.getJSONObject(i));
+                    equals(new JSONObject(str1),new JSONObject(str2));
                 }else{
                     equalsStr+=false;
                     logger.info("[false,第{}个元素,str1={},str2={}]",i,str1,str2);
@@ -152,6 +152,33 @@ public class JsonEqualsUtils {
         init();
         equals(json1,json2);
         return getJsonEqualsResult();
+    }
+    public static void delKeyByValueIsNull(JSONArray array) throws JSONException {
+        for(int i=0;i<array.length();i++){
+            String str = array.getString(i);
+            if(str.startsWith("[")){
+                delKeyByValueIsNull(array.getJSONArray(i));
+            }else if(str.startsWith("{")){
+                delKeyByValueIsNull(array.getJSONObject(i));
+            }
+        }
+    }
+    public static void delKeyByValueIsNull(JSONObject json) throws JSONException {
+        Iterator<String> it = json.keys();
+        while(it.hasNext()){
+            String key = it.next();
+            String value = json.getString(key);
+            if (value.startsWith("[")) {
+                delKeyByValueIsNull(json.getJSONArray(key));
+            }else if(value.startsWith("{")){
+                delKeyByValueIsNull(json.getJSONObject(key));
+            }else{
+                Object valueObj = json.get(key);
+                if(valueObj.equals(null)){
+                    it.remove();
+                }
+            }
+        }
     }
     public static void main(String[] args) throws JSONException {
         JSONArray j1 = new JSONArray("[[1,2,3],[4,3],[6]]");
