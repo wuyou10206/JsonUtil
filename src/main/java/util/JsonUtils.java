@@ -145,11 +145,13 @@ public class JsonUtils {
     }
     public static boolean equalsJson(JSONObject json1,JSONObject json2) throws JSONException {
         init();
+        logger.info("需要比较的两个JSONObject为：json1={},json2={}",json1.toString(),json2.toString());
         equals(json1,json2);
         return getJsonEqualsResult();
     }
     public static boolean equalsJsonArray(JSONArray json1,JSONArray json2) throws JSONException {
         init();
+        logger.info("需要比较的两个JSONArray为：array1={},array2={}",json1.toString(),json2.toString());
         equals(json1,json2);
         return getJsonEqualsResult();
     }
