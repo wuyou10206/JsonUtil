@@ -98,7 +98,7 @@ public class JsonUtils {
                 if (value1.startsWith("[")) {
                     if (value2.startsWith("[")) {
                         JSONArray array1 = json1.getJSONArray(key);
-                        JSONArray array2 = json1.getJSONArray(key);
+                        JSONArray array2 = json2.getJSONArray(key);
                         equals(array1,array2);
                     } else {
                         equalsStr+=false;
