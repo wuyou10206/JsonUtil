@@ -21,7 +21,7 @@ public class JsonUtils {
     }
 
     /**
-     * 判断两个JSONArray是否相等,默认对两个JSONArray按照字符串进行字典排序,该方法会递归调用
+     * 判断两个JSONArray是否相等,默认对两个JSONArray进行排序,该方法会递归调用
      * @param array1 JSONArray
      * @param array2 JSONArray
      * @throws JSONException
@@ -178,7 +178,7 @@ public class JsonUtils {
     }
 
     /**
-     * 对外提供的判断两个JSONObject是否想等的方法,如果json中包含数组,数组则按字典排序进行排序比较
+     * 对外提供的判断两个JSONObject是否想等的方法,如果json中包含数组
      * @param json1 第一个JSONObject
      * @param json2 第一个JSONObject
      * @return 返回true则为相等，false为不相等
@@ -192,7 +192,7 @@ public class JsonUtils {
     }
 
     /**
-     * 对外提供的判断两个JSONArray是否想等的方法,数组则按字典排序进行排序比较
+     * 对外提供的判断两个JSONArray是否想等的方法
      * @param json1 第一个JSONArray
      * @param json2 第一个JSONArray
      * @return 返回true则为相等，false为不相等
@@ -205,6 +205,24 @@ public class JsonUtils {
         return getJsonEqualsResult();
     }
 
+    /**
+     * 对外提供的判断两个json是否想等的方法
+     * @param json1 第一个json字符串
+     * @param json2 第二个json字符串
+     * @return 返回true则认为两个json相等，false不相等。
+     * @throws JSONException
+     */
+    public static boolean equals(String json1,String json2) throws JSONException {
+        boolean flag = false;
+        if(json1.startsWith("{")&&json2.startsWith("{")){
+            flag = equalsJson(new JSONObject(json1),new JSONObject(json2));
+        }else if(json1.startsWith("[")&&json2.startsWith("[")){
+            flag = equalsJsonArray(new JSONArray(json1),new JSONArray(json2));
+        }else{
+            throw new RuntimeException("json格式错误");
+        }
+        return flag;
+    }
     /**
      * 去除JSONArray中key为null的key
      * @param array JSONArray
@@ -244,6 +262,27 @@ public class JsonUtils {
         }
     }
 
+    /**
+     * 对外提供的去除json中key为null的key
+     * @param json 符合json规范的字符串
+     * @return 处理后的json字符串
+     * @throws JSONException
+     */
+    public static String delKeyByValueIsNull(String json) throws JSONException {
+        String str = null;
+        if(json.startsWith("{")){
+            JSONObject jsonObject = new JSONObject(json);
+            delKeyByValueIsNull(jsonObject);
+            str = jsonObject.toString();
+        }else if(json.startsWith("[")){
+            JSONArray jsonArray = new JSONArray(json);
+            delKeyByValueIsNull(jsonArray);
+            str = jsonArray.toString();
+        }else{
+            logger.info("传入的json格式错误");
+        }
+        return str;
+    }
     /**
      * 对JSONArray进行字典排序,对包含JSONObject则对key进行字典排序，递归调用
      * @param json JSONArray
