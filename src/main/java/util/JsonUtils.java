@@ -14,6 +14,7 @@ import java.util.*;
  */
 public class JsonUtils {
     private static String equalsStr = "";
+    private static String equalsKeyStr = "";
     private static final Logger logger = LoggerFactory.getLogger(JsonUtils.class);
 
     static {
@@ -160,10 +161,15 @@ public class JsonUtils {
     private static void init(){
         equalsStr="";
     }
-
     /**
-     * 得到比较结果，true为相等，false为不相等
-     * @return
+     * 初始化equalsKeyStr的值
+     */
+    private static void initByKey(){
+        equalsKeyStr="";
+    }
+    /**
+     * 得到比较结果
+     * @return true为相等，false为不相等
      */
     private static boolean getJsonEqualsResult(){
         logger.info("equalsStr="+equalsStr);
@@ -176,7 +182,40 @@ public class JsonUtils {
             return index==-1;
         }
     }
-
+    /**
+     * 得到比较结果
+     * @return true为相等，false为不相等
+     */
+    private static boolean getJsonEqualsResultByKey(){
+        logger.info("equalsKeyStr="+equalsKeyStr);
+        if(equalsKeyStr.equals("")){
+            equalsKeyStr="";
+            return false;
+        }else{
+            int index = equalsKeyStr.indexOf("false");
+            equalsKeyStr="";
+            return index==-1;
+        }
+    }
+    /**
+     * 对外提供的判断两个json的key是否想等的方法，此方法之比较key不比较key的值
+     * @param json1 第一个json字符串
+     * @param json2 第二个json字符串
+     * @return 返回true则认为两个json相等，false不相等。
+     * @throws JSONException
+     */
+    public static boolean equalsByKey(String json1,String json2) throws JSONException {
+        initByKey();
+        if(json1.startsWith("{")&&json2.startsWith("{")){
+            equalsByKey(new JSONObject(json1),new JSONObject(json2));
+        }else if(json1.startsWith("[")&&json2.startsWith("[")){
+           equalsByKey(new JSONArray(json1),new JSONArray(json2));
+        }else{
+            throw new RuntimeException("json格式错误");
+        }
+        boolean flag = getJsonEqualsResultByKey();
+        return flag;
+    }
     /**
      * 对外提供的判断两个JSONObject是否想等的方法,如果json中包含数组
      * @param json1 第一个JSONObject
@@ -371,6 +410,116 @@ public class JsonUtils {
         return str;
     }
 
+    /**
+     * 比较两个JSONArray的key是否相等，此方法法之比较key不对key的值进行比较
+     * @param array1 第一个JSONArray
+     * @param array2 第二个JSONArray
+     * @throws JSONException
+     */
+    private static void equalsByKey(JSONArray array1,JSONArray array2) throws JSONException {
+        if(array1.toString().equals(array2.toString())){
+            equalsStr+=true;
+            return;
+        }
+        if(array1.length()!=array2.length()){
+            equalsStr+=false;
+            logger.info("[false,array1.length={},array2.length={}]",array1.length(),array2.length());
+            logger.debug("array1={},array2={}",array1.toString(),array2.toString());
+            return;
+        }
+        array1 = sort(array1);
+        array2 = sort(array2);
+        for(int i=0;i<array1.length();i++){
+            String str1 = array1.getString(i);
+            String str2 = array2.getString(i);
+            if(str1.startsWith("[")){
+                if(str2.startsWith("[")){
+                    equalsByKey(new JSONArray(str1),new JSONArray(str2));
+                }else{
+                    equalsStr+=false;
+                    logger.info("[false,第{}个元素,str1={},str2={}]",i,str1,str2);
+                    logger.debug("array1={},array2={}",array1.toString(),array2.toString());
+                }
+            }else if(str1.startsWith("{")){
+                if(str2.startsWith("{")){
+                    equalsByKey(new JSONObject(str1),new JSONObject(str2));
+                }else{
+                    equalsStr+=false;
+                    logger.info("[false,第{}个元素,str1={},str2={}]",i,str1,str2);
+                    logger.debug("array1={},array2={}",array1.toString(),array2.toString());
+                }
+
+            }else{
+                boolean b = !str2.startsWith("[")&&!str2.startsWith("[");
+                equalsStr+=b;
+                if(!b) {
+                    logger.info("[{},第{}个元素,str1={},str2={}]", b, i, str1, str2);
+                    logger.debug("array1={},array2={}", array1.toString(), array2.toString());
+                }
+            }
+        }
+    }
+
+    /**
+     * 比较两个JSONObject的key是否相等，此方法法之比较key不对key的值进行比较
+     * @param json1 第一个JSONObject
+     * @param json2 第二个JSONObject
+     * @throws JSONException
+     */
+    private static void equalsByKey(JSONObject json1,JSONObject json2) throws JSONException {
+        if (json1.length() != json2.length()) {
+            equalsStr+=false;
+            logger.info("[false,json1.length={},json2.length={}]",json1.length(),json2.length());
+            logger.debug("json1={},json2={}",json1.toString(),json2.toString());
+            return;
+        }
+        String str1 = json1.toString();
+        String str2 = json2.toString();
+        if (str1.equals(str2)) {
+            equalsStr+=true;
+            return;
+        }
+
+        Iterator<String> iterator = json1.keys();
+        while (iterator.hasNext()) {
+            String key = iterator.next();
+            if (json2.has(key)) {
+                String value1 = json1.getString(key);
+                String value2 = json2.getString(key);
+                if (value1.startsWith("[")) {
+                    if (value2.startsWith("[")) {
+                        JSONArray array1 = json1.getJSONArray(key);
+                        JSONArray array2 = json2.getJSONArray(key);
+                        equalsByKey(array1,array2);
+                    } else {
+                        equalsStr+=false;
+                        logger.info("[false,key={},value1={},value2={}]",key,value1,value2);
+                        logger.debug("json1={},json2={}",json1.toString(),json2.toString());
+                    }
+
+                }else if(value1.startsWith("{")){
+                    if(value2.startsWith("{")){
+                        equalsByKey(json1.getJSONObject(key),json2.getJSONObject(key));
+                    }else{
+                        equalsStr+=false;
+                        logger.info("[false,key={},value1={},value2={}]",key,value1,value2);
+                        logger.debug("json1={},json2={}",json1.toString(),json2.toString());
+                    }
+                }else{
+                    boolean b = !value2.startsWith("{")&&!value2.startsWith("[");
+                    equalsStr+=b;
+                    if(!b) {
+                        logger.info("[{},key={},value1={},value2={}]",b, key, value1, value2);
+                        logger.debug("json1={},json2={}", json1.toString(), json2.toString());
+                    }
+                }
+            } else {
+                equalsStr+=false;
+                logger.info("[false,json2中没有key={}]",key);
+                logger.debug("json1={},json2={}",json1.toString(),json2.toString());
+            }
+        }
+    }
     public static void main(String[] args) throws JSONException {
         JSONArray j1 = new JSONArray("[[1,2,3],[4,3],[6]]");
         JSONArray j2 = new JSONArray("[[1,2,3],[3,4],[6]]");
